@@ -1,5 +1,4 @@
 #include <iostream>
-#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -7,8 +6,9 @@ using namespace std;
 struct Process {
     int priority;
     int arrivalInstant;
-    int serviceTime;
+    int burnTime;
     int waitingTime;
+    int answerTime;
 };
 
 struct Output {
@@ -27,16 +27,26 @@ Process *processes;
 // Scheduling algorithms
 Output fifo();
 
+Output rrq(int quantum);
+
 // Helper functions
 void sortProcessesByArrivalInstant();
 
 float calculateWaitingTimeAverage();
+
+float calculateAnswerTimeAverage();
 
 int calculateNumberOfSlots();
 
 void initializeTimeSlots();
 
 void initializeProcesses();
+
+int getFirstArrivalInstantGap();
+
+void burnSlotsFromTo(int start, int end, int indexOfProcess);
+
+void setAnswerTime(int value, int index);
 
 int main() {
     // Input
@@ -53,7 +63,62 @@ int main() {
     cout << fifoOutput.averageWaitingTime << endl;
     cout << fifoOutput.averageServiceTime << endl;
 
+    cout << endl;
+
+    initializeProcesses();
+
+    Output rrqOutput = rrq(5);
+    cout << rrqOutput.algorithm << endl;
+    cout << rrqOutput.averageWaitingTime << endl;
+    cout << rrqOutput.averageServiceTime << endl;
+
+    cout << endl;
+
     return 0;
+}
+
+Output rrq(int quantum) {
+    sortProcessesByArrivalInstant();
+    initializeTimeSlots();
+
+    int slotsToBurn[numberOfProcesses];
+    for (int i = 0; i < numberOfProcesses; i++) {
+        slotsToBurn[i] = processes[i].burnTime;
+    }
+
+    int currentSlot = 0;
+    int totalSlotsToBurn = numberOfSlots - getFirstArrivalInstantGap();
+    while (totalSlotsToBurn > 0) {
+        for (int i = 0; i < numberOfProcesses; i++) {
+            setAnswerTime(currentSlot, i);
+            if (slotsToBurn[i] > 0) {
+                if (slotsToBurn[i] > quantum) {
+                    // For debugging purposes
+                    burnSlotsFromTo(currentSlot, currentSlot + quantum, i);
+
+                    currentSlot += quantum;
+                    totalSlotsToBurn -= quantum;
+                    slotsToBurn[i] -= quantum;
+                } else {
+                    // For debugging purposes
+                    burnSlotsFromTo(currentSlot, currentSlot + slotsToBurn[i], i);
+
+                    processes[i].waitingTime = currentSlot - processes[i].burnTime;
+                    currentSlot += slotsToBurn[i];
+                    totalSlotsToBurn -= slotsToBurn[i];
+                    slotsToBurn[i] = 0;
+                }
+
+            }
+        }
+    }
+
+    Output output;
+    output.algorithm = "RRQ5";
+    output.averageWaitingTime = calculateWaitingTimeAverage();
+    output.averageServiceTime = calculateAnswerTimeAverage();
+
+    return output;
 }
 
 Output fifo() {
@@ -68,7 +133,7 @@ Output fifo() {
             executionStartAt++;
         }
 
-        int executionSlotLimit = executionStartAt + processes[i].serviceTime;
+        int executionSlotLimit = executionStartAt + processes[i].burnTime;
         for (int k = executionStartAt; k < executionSlotLimit; k++) {
             timeSlots[k] = i;
         }
@@ -97,20 +162,73 @@ void initializeProcesses() {
     numberOfProcesses = 3;
     processes = new Process[numberOfProcesses];
 
+//    processes[0].priority = 4;
+//    processes[0].arrivalInstant = 1.0;
+//    processes[0].burnTime = 3.0;
+//    processes[0].waitingTime = 0;
+//    processes[0].answerTime = -1;
+//
+//    processes[1].priority = 2;
+//    processes[1].arrivalInstant = 2.0;
+//    processes[1].burnTime = 2.0;
+//    processes[1].waitingTime = 0;
+//    processes[1].answerTime = -1;
+//
+//    processes[2].priority = 1;
+//    processes[2].arrivalInstant = 3.0;
+//    processes[2].burnTime = 1.0;
+//    processes[2].waitingTime = 0;
+//    processes[2].answerTime = -1;
+//
+//    processes[3].priority = 3;
+//    processes[3].arrivalInstant = 3.0;
+//    processes[3].burnTime = 4.0;
+//    processes[3].waitingTime = 0;
+//    processes[3].answerTime = -1;
+//
+//    processes[4].priority = 4;
+//    processes[4].arrivalInstant = 4.0;
+//    processes[4].burnTime = 3.0;
+//    processes[4].waitingTime = 0;
+//    processes[4].answerTime = -1;
+//
+//    processes[5].priority = 2;
+//    processes[5].arrivalInstant = 6.0;
+//    processes[5].burnTime = 2.0;
+//    processes[5].waitingTime = 0;
+//    processes[5].answerTime = -1;
+//
+//    processes[6].priority = 2;
+//    processes[6].arrivalInstant = 6.0;
+//    processes[6].burnTime = 1.0;
+//    processes[6].waitingTime = 0;
+//    processes[6].answerTime = -1;
+//
+//    processes[7].priority = 0;
+//    processes[7].arrivalInstant = 7.0;
+//    processes[7].burnTime = 1.0;
+//    processes[7].waitingTime = 0;
+//    processes[7].answerTime = -1;
+
+    // ==========================
+
     processes[0].priority = 0;
     processes[0].arrivalInstant = 20.0;
-    processes[0].serviceTime = 42.0;
+    processes[0].burnTime = 42.0;
     processes[0].waitingTime = 0;
+    processes[0].answerTime = -1;
 
     processes[1].priority = 2;
     processes[1].arrivalInstant = 3.0;
-    processes[1].serviceTime = 33.0;
+    processes[1].burnTime = 33.0;
     processes[1].waitingTime = 0;
+    processes[1].answerTime = -1;
 
     processes[2].priority = 1;
     processes[2].arrivalInstant = 14.0;
-    processes[2].serviceTime = 54.0;
+    processes[2].burnTime = 54.0;
     processes[2].waitingTime = 0;
+    processes[2].answerTime = -1;
 }
 
 float calculateWaitingTimeAverage() {
@@ -122,11 +240,20 @@ float calculateWaitingTimeAverage() {
     return sum / (float) numberOfProcesses;
 }
 
+float calculateAnswerTimeAverage() {
+    float sum = 0;
+    for (int i = 0; i < numberOfProcesses; i++) {
+        sum += processes[i].answerTime;
+    }
+
+    return sum / (float) numberOfProcesses;
+}
+
 int calculateNumberOfSlots() {
     int sumOfSlots = 0;
     for (int j = 0; j < numberOfProcesses; j++) {
-        if (j == 0) sumOfSlots += processes[j].arrivalInstant + processes[j].serviceTime;
-        else sumOfSlots += processes[j].serviceTime;
+        if (j == 0) sumOfSlots += processes[j].arrivalInstant + processes[j].burnTime;
+        else sumOfSlots += processes[j].burnTime;
     }
 
     return sumOfSlots;
@@ -142,6 +269,24 @@ void sortProcessesByArrivalInstant() {
             }
         }
         if (!swaps) break;
+    }
+}
+
+// Use for sorted arrays only
+int getFirstArrivalInstantGap() {
+    return processes[0].arrivalInstant;
+}
+
+void burnSlotsFromTo(int start, int end, int indexOfProcess) {
+    for (int i = start; i < end; i++) {
+        timeSlots[i] = indexOfProcess;
+    }
+}
+
+void setAnswerTime(int value, int index) {
+    if (processes[index].answerTime == -1) {
+        if (index == 0) processes[index].answerTime = processes[index].arrivalInstant;
+        else processes[index].answerTime = value;
     }
 }
 
