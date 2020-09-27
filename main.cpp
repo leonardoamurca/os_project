@@ -6,7 +6,7 @@ using namespace std;
 struct Process {
     int priority;
     int arrivalInstant;
-    int burnTime;
+    int burstTime;
     int waitingTime;
     int answerTime;
 };
@@ -83,7 +83,7 @@ Output rrq(int quantum) {
 
     int slotsToBurn[numberOfProcesses];
     for (int i = 0; i < numberOfProcesses; i++) {
-        slotsToBurn[i] = processes[i].burnTime;
+        slotsToBurn[i] = processes[i].burstTime;
     }
 
     int currentSlot = 0;
@@ -103,7 +103,7 @@ Output rrq(int quantum) {
                     // For debugging purposes
                     burnSlotsFromTo(currentSlot, currentSlot + slotsToBurn[i], i);
 
-                    processes[i].waitingTime = currentSlot - processes[i].burnTime;
+                    processes[i].waitingTime = currentSlot - processes[i].burstTime - processes[i].arrivalInstant ;
                     currentSlot += slotsToBurn[i];
                     totalSlotsToBurn -= slotsToBurn[i];
                     slotsToBurn[i] = 0;
@@ -111,6 +111,10 @@ Output rrq(int quantum) {
 
             }
         }
+    }
+
+    for (int i = 0; i < numberOfSlots; i++) {
+        cout << timeSlots[i] << ",";
     }
 
     Output output;
@@ -133,7 +137,7 @@ Output fifo() {
             executionStartAt++;
         }
 
-        int executionSlotLimit = executionStartAt + processes[i].burnTime;
+        int executionSlotLimit = executionStartAt + processes[i].burstTime;
         for (int k = executionStartAt; k < executionSlotLimit; k++) {
             timeSlots[k] = i;
         }
@@ -161,52 +165,52 @@ void initializeTimeSlots() {
 void initializeProcesses() {
     numberOfProcesses = 3;
     processes = new Process[numberOfProcesses];
-
+//
 //    processes[0].priority = 4;
 //    processes[0].arrivalInstant = 1.0;
-//    processes[0].burnTime = 3.0;
+//    processes[0].burstTime = 3.0;
 //    processes[0].waitingTime = 0;
 //    processes[0].answerTime = -1;
 //
 //    processes[1].priority = 2;
 //    processes[1].arrivalInstant = 2.0;
-//    processes[1].burnTime = 2.0;
+//    processes[1].burstTime = 2.0;
 //    processes[1].waitingTime = 0;
 //    processes[1].answerTime = -1;
 //
 //    processes[2].priority = 1;
 //    processes[2].arrivalInstant = 3.0;
-//    processes[2].burnTime = 1.0;
+//    processes[2].burstTime = 1.0;
 //    processes[2].waitingTime = 0;
 //    processes[2].answerTime = -1;
 //
 //    processes[3].priority = 3;
 //    processes[3].arrivalInstant = 3.0;
-//    processes[3].burnTime = 4.0;
+//    processes[3].burstTime = 4.0;
 //    processes[3].waitingTime = 0;
 //    processes[3].answerTime = -1;
 //
 //    processes[4].priority = 4;
 //    processes[4].arrivalInstant = 4.0;
-//    processes[4].burnTime = 3.0;
+//    processes[4].burstTime = 3.0;
 //    processes[4].waitingTime = 0;
 //    processes[4].answerTime = -1;
 //
 //    processes[5].priority = 2;
 //    processes[5].arrivalInstant = 6.0;
-//    processes[5].burnTime = 2.0;
+//    processes[5].burstTime = 2.0;
 //    processes[5].waitingTime = 0;
 //    processes[5].answerTime = -1;
 //
 //    processes[6].priority = 2;
 //    processes[6].arrivalInstant = 6.0;
-//    processes[6].burnTime = 1.0;
+//    processes[6].burstTime = 1.0;
 //    processes[6].waitingTime = 0;
 //    processes[6].answerTime = -1;
 //
 //    processes[7].priority = 0;
 //    processes[7].arrivalInstant = 7.0;
-//    processes[7].burnTime = 1.0;
+//    processes[7].burstTime = 1.0;
 //    processes[7].waitingTime = 0;
 //    processes[7].answerTime = -1;
 
@@ -214,19 +218,19 @@ void initializeProcesses() {
 
     processes[0].priority = 0;
     processes[0].arrivalInstant = 20.0;
-    processes[0].burnTime = 42.0;
+    processes[0].burstTime = 42.0;
     processes[0].waitingTime = 0;
     processes[0].answerTime = -1;
 
     processes[1].priority = 2;
     processes[1].arrivalInstant = 3.0;
-    processes[1].burnTime = 33.0;
+    processes[1].burstTime = 33.0;
     processes[1].waitingTime = 0;
     processes[1].answerTime = -1;
 
     processes[2].priority = 1;
     processes[2].arrivalInstant = 14.0;
-    processes[2].burnTime = 54.0;
+    processes[2].burstTime = 54.0;
     processes[2].waitingTime = 0;
     processes[2].answerTime = -1;
 }
@@ -252,8 +256,8 @@ float calculateAnswerTimeAverage() {
 int calculateNumberOfSlots() {
     int sumOfSlots = 0;
     for (int j = 0; j < numberOfProcesses; j++) {
-        if (j == 0) sumOfSlots += processes[j].arrivalInstant + processes[j].burnTime;
-        else sumOfSlots += processes[j].burnTime;
+        if (j == 0) sumOfSlots += processes[j].arrivalInstant + processes[j].burstTime;
+        else sumOfSlots += processes[j].burstTime;
     }
 
     return sumOfSlots;
@@ -286,7 +290,7 @@ void burnSlotsFromTo(int start, int end, int indexOfProcess) {
 void setAnswerTime(int value, int index) {
     if (processes[index].answerTime == -1) {
         if (index == 0) processes[index].answerTime = processes[index].arrivalInstant;
-        else processes[index].answerTime = value;
+        else processes[index].answerTime = value - getFirstArrivalInstantGap();
     }
 }
 
