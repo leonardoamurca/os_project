@@ -103,7 +103,7 @@ Output rrq(int quantum) {
                     // For debugging purposes
                     burnSlotsFromTo(currentSlot, currentSlot + slotsToBurn[i], i);
 
-                    processes[i].waitingTime = currentSlot - processes[i].burstTime - processes[i].arrivalInstant ;
+                    processes[i].waitingTime = currentSlot - processes[i].burstTime - processes[i].arrivalInstant - getFirstArrivalInstantGap();
                     currentSlot += slotsToBurn[i];
                     totalSlotsToBurn -= slotsToBurn[i];
                     slotsToBurn[i] = 0;
@@ -165,7 +165,7 @@ void initializeTimeSlots() {
 void initializeProcesses() {
     numberOfProcesses = 3;
     processes = new Process[numberOfProcesses];
-//
+
 //    processes[0].priority = 4;
 //    processes[0].arrivalInstant = 1.0;
 //    processes[0].burstTime = 3.0;
