@@ -29,6 +29,8 @@ Output fifo();
 
 Output rrq(int quantum);
 
+Output srtf();
+
 // Helper functions
 void sortProcessesByArrivalInstant();
 
@@ -37,6 +39,8 @@ float calculateWaitingTimeAverage();
 float calculateAnswerTimeAverage();
 
 int calculateNumberOfSlots();
+
+int calculateWaitingTime(Process process, int currentSlot);
 
 void initializeTimeSlots();
 
@@ -47,6 +51,8 @@ int getFirstArrivalInstantGap();
 void burnSlotsFromTo(int start, int end, int indexOfProcess);
 
 void setAnswerTime(int value, int index);
+
+bool hasProcessCompletelyExecuted(int remainingBurstTime);
 
 int main() {
     // Input
@@ -72,10 +78,74 @@ int main() {
     cout << rrqOutput.averageWaitingTime << endl;
     cout << rrqOutput.averageServiceTime << endl;
 
+    initializeProcesses();
+
+    Output srtfOutput = srtf();
+    cout << srtfOutput.algorithm << endl;
+    cout << srtfOutput.averageWaitingTime << endl;
+    cout << srtfOutput.averageServiceTime << endl;
+
     cout << endl;
 
     return 0;
 }
+
+Output srtf() {
+    initializeTimeSlots();
+
+    int remainingBurstTimes[numberOfProcesses];
+    for (int i = 0; i < numberOfProcesses; i++)
+        remainingBurstTimes[i] = processes[i].burstTime;
+
+    int complete = 0, currentTimeSlot = 0, minimumBurstTime = INT32_MAX;
+    int shortest = 0, finish_time;
+    bool check = false;
+
+    while (complete != numberOfProcesses) {
+        for (int j = 0; j < numberOfProcesses; j++) {
+            int currentRemainingBurstTime = remainingBurstTimes[j];
+            int currentProcessArrivalInstant = processes[j].arrivalInstant;
+
+            if ((currentProcessArrivalInstant <= currentTimeSlot) && (currentRemainingBurstTime < minimumBurstTime) &&
+                currentRemainingBurstTime > 0) {
+                minimumBurstTime = currentRemainingBurstTime;
+                shortest = j;
+                check = true;
+            }
+        }
+        if (!check) {
+            currentTimeSlot++;
+            continue;
+        }
+
+        remainingBurstTimes[shortest]--;
+        minimumBurstTime = remainingBurstTimes[shortest];
+        if (minimumBurstTime == 0) minimumBurstTime = INT32_MAX;
+
+        if (hasProcessCompletelyExecuted(remainingBurstTimes[shortest])) {
+            complete++;
+            check = false;
+            finish_time = currentTimeSlot + 1;
+            // Calculate waiting time
+            processes[shortest].waitingTime =
+                    finish_time - processes[shortest].burstTime - processes[shortest].arrivalInstant;
+            if (processes[shortest].waitingTime < 0) processes[shortest].waitingTime = 0;
+        }
+
+        currentTimeSlot++;
+    }
+
+    float waitingAverageTime = calculateWaitingTimeAverage();
+
+
+    Output output;
+    output.algorithm = "SRTF";
+    output.averageWaitingTime = waitingAverageTime;
+    output.averageServiceTime = waitingAverageTime;
+
+    return output;
+}
+
 
 Output rrq(int quantum) {
     sortProcessesByArrivalInstant();
@@ -103,7 +173,7 @@ Output rrq(int quantum) {
                     // For debugging purposes
                     burnSlotsFromTo(currentSlot, currentSlot + slotsToBurn[i], i);
 
-                    processes[i].waitingTime = currentSlot - processes[i].burstTime - processes[i].arrivalInstant - getFirstArrivalInstantGap();
+                    processes[i].waitingTime = calculateWaitingTime(processes[i], currentSlot);
                     currentSlot += slotsToBurn[i];
                     totalSlotsToBurn -= slotsToBurn[i];
                     slotsToBurn[i] = 0;
@@ -111,10 +181,6 @@ Output rrq(int quantum) {
 
             }
         }
-    }
-
-    for (int i = 0; i < numberOfSlots; i++) {
-        cout << timeSlots[i] << ",";
     }
 
     Output output;
@@ -125,13 +191,14 @@ Output rrq(int quantum) {
     return output;
 }
 
+
 Output fifo() {
     sortProcessesByArrivalInstant();
     initializeTimeSlots();
 
     for (int i = 0; i < numberOfProcesses; i++) {
         int executionStartAt = processes[i].arrivalInstant;
-        if (i == 0) processes[i].waitingTime = executionStartAt;
+        if (i == 0) processes[i].waitingTime = executionStartAt - getFirstArrivalInstantGap();
         while (timeSlots[executionStartAt] != -1) {
             processes[i].waitingTime++;
             executionStartAt++;
@@ -268,7 +335,7 @@ void sortProcessesByArrivalInstant() {
         bool swaps = false;
         for (int j = 0; j < numberOfProcesses - i - 1; j++) {
             if (processes[j].arrivalInstant > processes[j + 1].arrivalInstant) {
-                swap(processes[j].arrivalInstant, processes[j + 1].arrivalInstant);
+                swap(processes[j], processes[j + 1]);
                 swaps = true;
             }
         }
@@ -292,6 +359,14 @@ void setAnswerTime(int value, int index) {
         if (index == 0) processes[index].answerTime = processes[index].arrivalInstant;
         else processes[index].answerTime = value - getFirstArrivalInstantGap();
     }
+}
+
+int calculateWaitingTime(Process process, int currentSlot) {
+    return currentSlot - process.burstTime - process.arrivalInstant - getFirstArrivalInstantGap();
+}
+
+bool hasProcessCompletelyExecuted(int remainingBurstTime) {
+    return remainingBurstTime == 0;
 }
 
 

@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/os_project.dir/main.cpp.o  -o os_project 
+/usr/bin/c++  -g   CMakeFiles/os_project.dir/main.cpp.o CMakeFiles/os_project.dir/draft.cpp.o  -o os_project 
