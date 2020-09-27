@@ -2,38 +2,36 @@
 
 using namespace std;
 
-// Custom structures
+// Estruturas customizadas
 struct Process {
-    int priority;
-    int arrivalInstant;
-    int burstTime;
-    int waitingTime;
-    int answerTime;
+    int priority; // prioridade
+    int arrivalInstant; // instante de chegada
+    int burstTime; // tempo de serviço
+    int waitingTime; // tempo de espera
+    int answerTime; // tempo de resposta
 };
 
 struct Output {
-    string algorithm;
-    float averageWaitingTime{};
-    float averageServiceTime{};
+    string algorithm; // nome do algoritmo
+    float averageWaitingTime{}; // tempo médio de espera
+    float averageBurstTime{}; // tempo médio de serviço
 };
 
-// Global variables
+// Variáveis globais
 int numberOfSlots;
 int *timeSlots;
 
 int numberOfProcesses;
 Process *processes;
 
-// Scheduling algorithms
+// Algoritmos de escalonamento
 Output fifo();
 
 Output rrq(int quantum);
 
 Output srtf();
 
-// Helper functions
-void sortProcessesByArrivalInstant();
-
+// Funções utilitárias
 float calculateWaitingTimeAverage();
 
 float calculateAnswerTimeAverage();
@@ -46,28 +44,28 @@ void initializeTimeSlots();
 
 void initializeProcesses();
 
-int getFirstArrivalInstantGap();
-
-void burnSlotsFromTo(int start, int end, int indexOfProcess);
+void sortProcessesByArrivalInstant();
 
 void setAnswerTime(int value, int index);
+
+int getFirstArrivalInstantGap();
 
 bool hasProcessCompletelyExecuted(int remainingBurstTime);
 
 int main() {
     // Input
-    // n = number of processes
-    // p = Process priority (0 <= p <= 10) ; i = moment when the Process arrives (0 <= i <= 2^n-1) ; s = Process service time (0 <= s <= 2^n-2)
+    // n = quantidade de processos
+    // p = Prioridade do processo (0 <= p <= 10) ; i = instante que o processo chega (0 <= i <= 2^n-1) ; s = Tempo de serviço do processo(0 <= s <= 2^n-2)
 
     // Output
-    // Algorithm name ; await average time ; answer average time
+    // Nome do algoritmo ; Tempo médio de espera ; Tempo médio de resposta
 
     initializeProcesses();
 
     Output fifoOutput = fifo();
     cout << fifoOutput.algorithm << endl;
     cout << fifoOutput.averageWaitingTime << endl;
-    cout << fifoOutput.averageServiceTime << endl;
+    cout << fifoOutput.averageBurstTime << endl;
 
     cout << endl;
 
@@ -76,14 +74,16 @@ int main() {
     Output rrqOutput = rrq(5);
     cout << rrqOutput.algorithm << endl;
     cout << rrqOutput.averageWaitingTime << endl;
-    cout << rrqOutput.averageServiceTime << endl;
+    cout << rrqOutput.averageBurstTime << endl;
 
     initializeProcesses();
+
+    cout << endl;
 
     Output srtfOutput = srtf();
     cout << srtfOutput.algorithm << endl;
     cout << srtfOutput.averageWaitingTime << endl;
-    cout << srtfOutput.averageServiceTime << endl;
+    cout << srtfOutput.averageBurstTime << endl;
 
     cout << endl;
 
@@ -126,7 +126,7 @@ Output srtf() {
             complete++;
             check = false;
             finish_time = currentTimeSlot + 1;
-            // Calculate waiting time
+
             processes[shortest].waitingTime =
                     finish_time - processes[shortest].burstTime - processes[shortest].arrivalInstant;
             if (processes[shortest].waitingTime < 0) processes[shortest].waitingTime = 0;
@@ -137,11 +137,10 @@ Output srtf() {
 
     float waitingAverageTime = calculateWaitingTimeAverage();
 
-
     Output output;
     output.algorithm = "SRTF";
     output.averageWaitingTime = waitingAverageTime;
-    output.averageServiceTime = waitingAverageTime;
+    output.averageBurstTime = waitingAverageTime;
 
     return output;
 }
@@ -152,33 +151,25 @@ Output rrq(int quantum) {
     initializeTimeSlots();
 
     int slotsToBurn[numberOfProcesses];
-    for (int i = 0; i < numberOfProcesses; i++) {
+    for (int i = 0; i < numberOfProcesses; i++)
         slotsToBurn[i] = processes[i].burstTime;
-    }
 
-    int currentSlot = 0;
+    int currentTimeSlot = 0;
     int totalSlotsToBurn = numberOfSlots - getFirstArrivalInstantGap();
     while (totalSlotsToBurn > 0) {
         for (int i = 0; i < numberOfProcesses; i++) {
-            setAnswerTime(currentSlot, i);
+            setAnswerTime(currentTimeSlot, i);
             if (slotsToBurn[i] > 0) {
                 if (slotsToBurn[i] > quantum) {
-                    // For debugging purposes
-                    burnSlotsFromTo(currentSlot, currentSlot + quantum, i);
-
-                    currentSlot += quantum;
+                    currentTimeSlot += quantum;
                     totalSlotsToBurn -= quantum;
                     slotsToBurn[i] -= quantum;
                 } else {
-                    // For debugging purposes
-                    burnSlotsFromTo(currentSlot, currentSlot + slotsToBurn[i], i);
-
-                    processes[i].waitingTime = calculateWaitingTime(processes[i], currentSlot);
-                    currentSlot += slotsToBurn[i];
+                    processes[i].waitingTime = calculateWaitingTime(processes[i], currentTimeSlot);
+                    currentTimeSlot += slotsToBurn[i];
                     totalSlotsToBurn -= slotsToBurn[i];
                     slotsToBurn[i] = 0;
                 }
-
             }
         }
     }
@@ -186,7 +177,7 @@ Output rrq(int quantum) {
     Output output;
     output.algorithm = "RRQ5";
     output.averageWaitingTime = calculateWaitingTimeAverage();
-    output.averageServiceTime = calculateAnswerTimeAverage();
+    output.averageBurstTime = calculateAnswerTimeAverage();
 
     return output;
 }
@@ -215,7 +206,7 @@ Output fifo() {
     Output output;
     output.algorithm = "FIFO";
     output.averageWaitingTime = waitingAverageTime;
-    output.averageServiceTime = waitingAverageTime;
+    output.averageBurstTime = waitingAverageTime;
 
     return output;
 }
@@ -233,73 +224,25 @@ void initializeProcesses() {
     numberOfProcesses = 3;
     processes = new Process[numberOfProcesses];
 
-//    processes[0].priority = 4;
-//    processes[0].arrivalInstant = 1.0;
-//    processes[0].burstTime = 3.0;
-//    processes[0].waitingTime = 0;
-//    processes[0].answerTime = -1;
-//
-//    processes[1].priority = 2;
-//    processes[1].arrivalInstant = 2.0;
-//    processes[1].burstTime = 2.0;
-//    processes[1].waitingTime = 0;
-//    processes[1].answerTime = -1;
-//
-//    processes[2].priority = 1;
-//    processes[2].arrivalInstant = 3.0;
-//    processes[2].burstTime = 1.0;
-//    processes[2].waitingTime = 0;
-//    processes[2].answerTime = -1;
-//
-//    processes[3].priority = 3;
-//    processes[3].arrivalInstant = 3.0;
-//    processes[3].burstTime = 4.0;
-//    processes[3].waitingTime = 0;
-//    processes[3].answerTime = -1;
-//
-//    processes[4].priority = 4;
-//    processes[4].arrivalInstant = 4.0;
-//    processes[4].burstTime = 3.0;
-//    processes[4].waitingTime = 0;
-//    processes[4].answerTime = -1;
-//
-//    processes[5].priority = 2;
-//    processes[5].arrivalInstant = 6.0;
-//    processes[5].burstTime = 2.0;
-//    processes[5].waitingTime = 0;
-//    processes[5].answerTime = -1;
-//
-//    processes[6].priority = 2;
-//    processes[6].arrivalInstant = 6.0;
-//    processes[6].burstTime = 1.0;
-//    processes[6].waitingTime = 0;
-//    processes[6].answerTime = -1;
-//
-//    processes[7].priority = 0;
-//    processes[7].arrivalInstant = 7.0;
-//    processes[7].burstTime = 1.0;
-//    processes[7].waitingTime = 0;
-//    processes[7].answerTime = -1;
-
-    // ==========================
-
     processes[0].priority = 0;
-    processes[0].arrivalInstant = 20.0;
-    processes[0].burstTime = 42.0;
+    processes[0].arrivalInstant = 3.0;
+    processes[0].burstTime = 33.0;
     processes[0].waitingTime = 0;
     processes[0].answerTime = -1;
 
     processes[1].priority = 2;
-    processes[1].arrivalInstant = 3.0;
-    processes[1].burstTime = 33.0;
+    processes[1].arrivalInstant = 14.0;
+    processes[1].burstTime = 54.0;
     processes[1].waitingTime = 0;
     processes[1].answerTime = -1;
 
     processes[2].priority = 1;
-    processes[2].arrivalInstant = 14.0;
-    processes[2].burstTime = 54.0;
+    processes[2].arrivalInstant = 20.0;
+    processes[2].burstTime = 42.0;
     processes[2].waitingTime = 0;
     processes[2].answerTime = -1;
+
+    // ============================
 }
 
 float calculateWaitingTimeAverage() {
@@ -346,12 +289,6 @@ void sortProcessesByArrivalInstant() {
 // Use for sorted arrays only
 int getFirstArrivalInstantGap() {
     return processes[0].arrivalInstant;
-}
-
-void burnSlotsFromTo(int start, int end, int indexOfProcess) {
-    for (int i = start; i < end; i++) {
-        timeSlots[i] = indexOfProcess;
-    }
 }
 
 void setAnswerTime(int value, int index) {

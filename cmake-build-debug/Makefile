@@ -143,33 +143,6 @@ os_project/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/build
 .PHONY : os_project/fast
 
-draft.o: draft.cpp.o
-
-.PHONY : draft.o
-
-# target to build an object file
-draft.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/draft.cpp.o
-.PHONY : draft.cpp.o
-
-draft.i: draft.cpp.i
-
-.PHONY : draft.i
-
-# target to preprocess a source file
-draft.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/draft.cpp.i
-.PHONY : draft.cpp.i
-
-draft.s: draft.cpp.s
-
-.PHONY : draft.s
-
-# target to generate assembly for a file
-draft.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/draft.cpp.s
-.PHONY : draft.cpp.s
-
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -206,9 +179,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... os_project"
-	@echo "... draft.o"
-	@echo "... draft.i"
-	@echo "... draft.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
