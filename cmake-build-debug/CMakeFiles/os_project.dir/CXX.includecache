@@ -9,4 +9,12 @@
 /home/leonardo/CLionProjects/os_project/main.cpp
 iostream
 -
+fstream
+-
+cstring
+-
+string
+-
+cstdlib
+-
 

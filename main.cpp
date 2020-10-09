@@ -1,4 +1,8 @@
 #include <iostream>
+#include <fstream>
+#include <cstring>
+#include <string>
+#include <cstdlib>
 
 using namespace std;
 
@@ -52,13 +56,12 @@ int getFirstArrivalInstantGap();
 
 bool hasProcessCompletelyExecuted(int remainingBurstTime);
 
-int main() {
-    // Input
-    // n = quantidade de processos
-    // p = Prioridade do processo (0 <= p <= 10) ; i = instante que o processo chega (0 <= i <= 2^n-1) ; s = Tempo de serviço do processo(0 <= s <= 2^n-2)
+// Entrada e saída de dados em arquivos
+int readFileAndGetNumberOfProcesses();
 
-    // Output
-    // Nome do algoritmo ; Tempo médio de espera ; Tempo médio de resposta
+void readFileAndSetProcessesData();
+
+int main() {
 
     initializeProcesses();
 
@@ -69,14 +72,10 @@ int main() {
 
     cout << endl;
 
-    initializeProcesses();
-
     Output rrqOutput = rrq(5);
     cout << rrqOutput.algorithm << endl;
     cout << rrqOutput.averageWaitingTime << endl;
     cout << rrqOutput.averageBurstTime << endl;
-
-    initializeProcesses();
 
     cout << endl;
 
@@ -88,6 +87,62 @@ int main() {
     cout << endl;
 
     return 0;
+}
+
+int readFileAndGetNumberOfProcesses() {
+    string line;
+    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+
+    if (infile.good()) getline(infile, line);
+    infile.close();
+
+    return stoi(line);
+}
+
+void readFileAndSetProcessesData() {
+    string fileLines[numberOfProcesses + 1];
+    string line;
+
+    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+
+    Process processesAux[numberOfProcesses];
+
+    int i = 0;
+    while (getline(infile, line)) {
+        fileLines[i] = line;
+
+        char *lineCharArray = new char[fileLines[i].length() + 1];
+        strcpy(lineCharArray, fileLines[i].c_str());
+
+        char *p = strtok(lineCharArray, " ");
+        if (i > 0) { // etapa de separar os tokens de cada processo
+            int j = 0;
+            while (p != nullptr) {
+                if (j == 0) {
+                    processesAux[i - 1].priority = (int) strtol(p, nullptr, 10);
+                } else if (j == 1) {
+                    processesAux[i - 1].arrivalInstant = (int) strtol(p, nullptr, 10);
+                } else {
+                    processesAux[i - 1].burstTime = (int) strtol(p, nullptr, 10);
+                }
+                p = strtok(nullptr, " ");
+                j++;
+            }
+            delete[] lineCharArray;
+        }
+        i++;
+    }
+
+    infile.close();
+
+    processes = new Process[numberOfProcesses];
+    for (int j = 0; j < numberOfProcesses; j++) {
+        processes[j].priority = processesAux[j].priority;
+        processes[j].arrivalInstant = processesAux[j].arrivalInstant;
+        processes[j].burstTime = processesAux[j].burstTime;
+        processes[j].waitingTime = 0;
+        processes[j].answerTime = -1;
+    }
 }
 
 Output srtf() {
@@ -221,28 +276,8 @@ void initializeTimeSlots() {
 }
 
 void initializeProcesses() {
-    numberOfProcesses = 3;
-    processes = new Process[numberOfProcesses];
-
-    processes[0].priority = 0;
-    processes[0].arrivalInstant = 3.0;
-    processes[0].burstTime = 33.0;
-    processes[0].waitingTime = 0;
-    processes[0].answerTime = -1;
-
-    processes[1].priority = 2;
-    processes[1].arrivalInstant = 14.0;
-    processes[1].burstTime = 54.0;
-    processes[1].waitingTime = 0;
-    processes[1].answerTime = -1;
-
-    processes[2].priority = 1;
-    processes[2].arrivalInstant = 20.0;
-    processes[2].burstTime = 42.0;
-    processes[2].waitingTime = 0;
-    processes[2].answerTime = -1;
-
-    // ============================
+    numberOfProcesses = readFileAndGetNumberOfProcesses();
+    readFileAndSetProcessesData();
 }
 
 float calculateWaitingTimeAverage() {
