@@ -4,6 +4,8 @@
 #include <string>
 #include <cstdlib>
 
+#define NUMBER_OF_ALGORITHMS 4
+
 using namespace std;
 
 // Estruturas customizadas
@@ -72,7 +74,7 @@ void writeOutputDataOnFile();
 int main() {
     initializeProcesses();
 
-    outputs = new Output[4];
+    outputs = new Output[NUMBER_OF_ALGORITHMS];
     outputs[0] = fifo();
     outputs[1] = prio();
     outputs[2] = srtf();
@@ -388,10 +390,12 @@ void readFileAndSetProcessesData() {
 void writeOutputDataOnFile() {
     ofstream outfile("/home/leonardo/CLionProjects/os_project/output.txt");
     if (outfile.is_open()) {
-        for (int i = 0; i < 4; i++) {
-            outfile << outputs[i].algorithm << " " << outputs[i].averageWaitingTime << " "
-                    << outputs[i].averageBurstTime;
-            outfile << "\n";
+        for (int i = 0; i < NUMBER_OF_ALGORITHMS; i++) {
+            outfile
+                << outputs[i].algorithm << " "
+                << outputs[i].averageWaitingTime << " "
+                << outputs[i].averageBurstTime
+                << "\n";
         }
     } else cout << "Não foi possível abrir o arquivo!";
     outfile.close();
