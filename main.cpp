@@ -28,14 +28,16 @@ int *timeSlots;
 int numberOfProcesses;
 Process *processes;
 
+Output *outputs;
+
 // Algoritmos de escalonamento
 Output fifo();
 
-Output rrq(int quantum);
+Output prio();
 
 Output srtf();
 
-Output prio();
+Output rrq(int quantum);
 
 // Funções utilitárias
 float calculateWaitingTimeAverage();
@@ -45,10 +47,6 @@ float calculateAnswerTimeAverage();
 int calculateNumberOfSlots();
 
 int calculateWaitingTime(Process process, int currentSlot);
-
-void initializeTimeSlots();
-
-void initializeProcesses();
 
 void sortProcessesByArrivalInstant();
 
@@ -60,44 +58,58 @@ int getFirstArrivalInstantGap();
 
 bool hasProcessCompletelyExecuted(int remainingBurstTime);
 
+void initializeTimeSlots();
+
+void initializeProcesses();
+
 // Entrada e saída de dados em arquivos
 int readFileAndGetNumberOfProcesses();
 
 void readFileAndSetProcessesData();
 
-int main() {
+void writeOutputDataOnFile();
 
+int main() {
     initializeProcesses();
 
-    Output fifoOutput = fifo();
-    cout << fifoOutput.algorithm << endl;
-    cout << fifoOutput.averageWaitingTime << endl;
-    cout << fifoOutput.averageBurstTime << endl;
+    outputs = new Output[4];
+    outputs[0] = fifo();
+    outputs[1] = prio();
+    outputs[2] = srtf();
+    outputs[3] = rrq(5);
 
-    cout << endl;
-
-    Output rrqOutput = rrq(5);
-    cout << rrqOutput.algorithm << endl;
-    cout << rrqOutput.averageWaitingTime << endl;
-    cout << rrqOutput.averageBurstTime << endl;
-
-    cout << endl;
-
-    Output srtfOutput = srtf();
-    cout << srtfOutput.algorithm << endl;
-    cout << srtfOutput.averageWaitingTime << endl;
-    cout << srtfOutput.averageBurstTime << endl;
-
-    cout << endl;
-
-    Output prioOutput = prio();
-    cout << prioOutput.algorithm << endl;
-    cout << prioOutput.averageWaitingTime << endl;
-    cout << prioOutput.averageBurstTime << endl;
-
-    cout << endl;
+    writeOutputDataOnFile();
 
     return 0;
+}
+
+// Algoritmos de escalonamento
+Output fifo() {
+    sortProcessesByArrivalInstant();
+    initializeTimeSlots();
+
+    for (int i = 0; i < numberOfProcesses; i++) {
+        int executionStartAt = processes[i].arrivalInstant;
+        if (i == 0) processes[i].waitingTime = executionStartAt - getFirstArrivalInstantGap();
+        while (timeSlots[executionStartAt] != -1) {
+            processes[i].waitingTime++;
+            executionStartAt++;
+        }
+
+        int executionSlotLimit = executionStartAt + processes[i].burstTime;
+        for (int k = executionStartAt; k < executionSlotLimit; k++) {
+            timeSlots[k] = i;
+        }
+    }
+
+    float waitingAverageTime = calculateWaitingTimeAverage();
+
+    Output output;
+    output.algorithm = "FIFO";
+    output.averageWaitingTime = waitingAverageTime;
+    output.averageBurstTime = waitingAverageTime;
+
+    return output;
 }
 
 Output prio() {
@@ -180,7 +192,6 @@ Output srtf() {
     return output;
 }
 
-
 Output rrq(int quantum) {
     sortProcessesByArrivalInstant();
     initializeTimeSlots();
@@ -217,38 +228,110 @@ Output rrq(int quantum) {
     return output;
 }
 
-
-Output fifo() {
-    sortProcessesByArrivalInstant();
-    initializeTimeSlots();
-
+// Funções utilitárias
+float calculateWaitingTimeAverage() {
+    float sum = 0;
     for (int i = 0; i < numberOfProcesses; i++) {
-        int executionStartAt = processes[i].arrivalInstant;
-        if (i == 0) processes[i].waitingTime = executionStartAt - getFirstArrivalInstantGap();
-        while (timeSlots[executionStartAt] != -1) {
-            processes[i].waitingTime++;
-            executionStartAt++;
-        }
-
-        int executionSlotLimit = executionStartAt + processes[i].burstTime;
-        for (int k = executionStartAt; k < executionSlotLimit; k++) {
-            timeSlots[k] = i;
-        }
+        sum += processes[i].waitingTime;
     }
 
-    float waitingAverageTime = calculateWaitingTimeAverage();
-
-    Output output;
-    output.algorithm = "FIFO";
-    output.averageWaitingTime = waitingAverageTime;
-    output.averageBurstTime = waitingAverageTime;
-
-    return output;
+    return sum / (float) numberOfProcesses;
 }
 
+float calculateAnswerTimeAverage() {
+    float sum = 0;
+    for (int i = 0; i < numberOfProcesses; i++) {
+        sum += processes[i].answerTime;
+    }
+
+    return sum / (float) numberOfProcesses;
+}
+
+int calculateNumberOfSlots() {
+    int sumOfSlots = 0;
+    for (int j = 0; j < numberOfProcesses; j++) {
+        if (j == 0) sumOfSlots += processes[j].arrivalInstant + processes[j].burstTime;
+        else sumOfSlots += processes[j].burstTime;
+    }
+
+    return sumOfSlots;
+}
+
+int calculateWaitingTime(Process process, int currentSlot) {
+    return currentSlot - process.burstTime - process.arrivalInstant - getFirstArrivalInstantGap();
+}
+
+void sortProcessesByArrivalInstant() {
+    for (int i = 0; i < numberOfProcesses; i++) {
+        bool swaps = false;
+        for (int j = 0; j < numberOfProcesses - i - 1; j++) {
+            if (processes[j].arrivalInstant > processes[j + 1].arrivalInstant) {
+                swap(processes[j], processes[j + 1]);
+                swaps = true;
+            }
+        }
+        if (!swaps) break;
+    }
+}
+
+void selectionSortForBurstTimeAndPriority() {
+    int pos, temp;
+    int processAux[numberOfProcesses];
+
+    for (int i = 0; i < numberOfProcesses; i++) {
+        pos = i;
+
+        for (int j = i + 1; j < numberOfProcesses; j++) {
+            if (processes[j].priority < processes[pos].priority) pos = j;
+        }
+
+        temp = processAux[i];
+        processAux[i] = processAux[pos];
+        processAux[pos] = temp;
+
+        temp = processes[i].burstTime;
+        processes[i].burstTime = processes[pos].burstTime;
+        processes[pos].burstTime = temp;
+
+        temp = processes[i].priority;
+        processes[i].priority = processes[pos].priority;
+        processes[pos].priority = temp;
+    }
+}
+
+void setAnswerTime(int value, int index) {
+    if (processes[index].answerTime == -1) {
+        if (index == 0) processes[index].answerTime = processes[index].arrivalInstant;
+        else processes[index].answerTime = value - getFirstArrivalInstantGap();
+    }
+}
+
+int getFirstArrivalInstantGap() {
+    return processes[0].arrivalInstant;
+}
+
+bool hasProcessCompletelyExecuted(int remainingBurstTime) {
+    return remainingBurstTime == 0;
+}
+
+void initializeTimeSlots() {
+    numberOfSlots = calculateNumberOfSlots();
+    timeSlots = new int[numberOfSlots];
+
+    for (int k = 0; k < numberOfSlots; k++) {
+        timeSlots[k] = -1;
+    }
+}
+
+void initializeProcesses() {
+    numberOfProcesses = readFileAndGetNumberOfProcesses();
+    readFileAndSetProcessesData();
+}
+
+// Entrada e saída de dados em arquivos
 int readFileAndGetNumberOfProcesses() {
     string line;
-    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+    ifstream infile("/home/leonardo/CLionProjects/os_project/input.txt");
 
     if (infile.good()) getline(infile, line);
     infile.close();
@@ -260,7 +343,7 @@ void readFileAndSetProcessesData() {
     string fileLines[numberOfProcesses + 1];
     string line;
 
-    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+    ifstream infile("/home/leonardo/CLionProjects/os_project/input.txt");
 
     Process processesAux[numberOfProcesses];
 
@@ -302,104 +385,16 @@ void readFileAndSetProcessesData() {
     }
 }
 
-void initializeProcesses() {
-    numberOfProcesses = readFileAndGetNumberOfProcesses();
-    readFileAndSetProcessesData();
-}
-
-void initializeTimeSlots() {
-    numberOfSlots = calculateNumberOfSlots();
-    timeSlots = new int[numberOfSlots];
-
-    for (int k = 0; k < numberOfSlots; k++) {
-        timeSlots[k] = -1;
-    }
-}
-
-float calculateWaitingTimeAverage() {
-    float sum = 0;
-    for (int i = 0; i < numberOfProcesses; i++) {
-        sum += processes[i].waitingTime;
-    }
-
-    return sum / (float) numberOfProcesses;
-}
-
-float calculateAnswerTimeAverage() {
-    float sum = 0;
-    for (int i = 0; i < numberOfProcesses; i++) {
-        sum += processes[i].answerTime;
-    }
-
-    return sum / (float) numberOfProcesses;
-}
-
-int calculateNumberOfSlots() {
-    int sumOfSlots = 0;
-    for (int j = 0; j < numberOfProcesses; j++) {
-        if (j == 0) sumOfSlots += processes[j].arrivalInstant + processes[j].burstTime;
-        else sumOfSlots += processes[j].burstTime;
-    }
-
-    return sumOfSlots;
-}
-
-void sortProcessesByArrivalInstant() {
-    for (int i = 0; i < numberOfProcesses; i++) {
-        bool swaps = false;
-        for (int j = 0; j < numberOfProcesses - i - 1; j++) {
-            if (processes[j].arrivalInstant > processes[j + 1].arrivalInstant) {
-                swap(processes[j], processes[j + 1]);
-                swaps = true;
-            }
+void writeOutputDataOnFile() {
+    ofstream outfile("/home/leonardo/CLionProjects/os_project/output.txt");
+    if (outfile.is_open()) {
+        for (int i = 0; i < 4; i++) {
+            outfile << outputs[i].algorithm << " " << outputs[i].averageWaitingTime << " "
+                    << outputs[i].averageBurstTime;
+            outfile << "\n";
         }
-        if (!swaps) break;
-    }
-}
-
-void selectionSortForBurstTimeAndPriority() {
-    int pos, temp;
-    int processAux[numberOfProcesses];
-
-    for (int i = 0; i < numberOfProcesses; i++) {
-        pos = i;
-
-        for (int j = i + 1; j < numberOfProcesses; j++) {
-            if (processes[j].priority < processes[pos].priority) pos = j;
-        }
-
-        temp = processAux[i];
-        processAux[i] = processAux[pos];
-        processAux[pos] = temp;
-
-        temp = processes[i].burstTime;
-        processes[i].burstTime = processes[pos].burstTime;
-        processes[pos].burstTime = temp;
-
-        temp = processes[i].priority;
-        processes[i].priority = processes[pos].priority;
-        processes[pos].priority = temp;
-    }
-}
-
-// Use for sorted arrays only
-int getFirstArrivalInstantGap() {
-    return processes[0].arrivalInstant;
-}
-
-void setAnswerTime(int value, int index) {
-    if (processes[index].answerTime == -1) {
-        if (index == 0) processes[index].answerTime = processes[index].arrivalInstant;
-        else processes[index].answerTime = value - getFirstArrivalInstantGap();
-    }
-}
-
-int calculateWaitingTime(Process process, int currentSlot) {
-    return currentSlot - process.burstTime - process.arrivalInstant - getFirstArrivalInstantGap();
-}
-
-bool hasProcessCompletelyExecuted(int remainingBurstTime) {
-    return remainingBurstTime == 0;
+    } else cout << "Não foi possível abrir o arquivo!";
+    outfile.close();
 }
 
 
