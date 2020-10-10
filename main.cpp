@@ -76,9 +76,9 @@ int main() {
 
     outputs = new Output[NUMBER_OF_ALGORITHMS];
     outputs[0] = fifo();
-    outputs[1] = prio();
-    outputs[2] = srtf();
     outputs[3] = rrq(5);
+    outputs[2] = srtf();
+    outputs[1] = prio();
 
     writeOutputDataOnFile();
 
