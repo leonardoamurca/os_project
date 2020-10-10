@@ -3,4 +3,4 @@ project(os_project)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(os_project main.cpp)
+add_executable(os_project main.cpp tets.cpp)

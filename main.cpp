@@ -35,6 +35,8 @@ Output rrq(int quantum);
 
 Output srtf();
 
+Output prio();
+
 // Funções utilitárias
 float calculateWaitingTimeAverage();
 
@@ -49,6 +51,8 @@ void initializeTimeSlots();
 void initializeProcesses();
 
 void sortProcessesByArrivalInstant();
+
+void selectionSortForBurstTimeAndPriority();
 
 void setAnswerTime(int value, int index);
 
@@ -86,63 +90,39 @@ int main() {
 
     cout << endl;
 
+    Output prioOutput = prio();
+    cout << prioOutput.algorithm << endl;
+    cout << prioOutput.averageWaitingTime << endl;
+    cout << prioOutput.averageBurstTime << endl;
+
+    cout << endl;
+
     return 0;
 }
 
-int readFileAndGetNumberOfProcesses() {
-    string line;
-    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+Output prio() {
+    selectionSortForBurstTimeAndPriority();
 
-    if (infile.good()) getline(infile, line);
-    infile.close();
+    float waitingAverageTime;
+    float sum = 0;
 
-    return stoi(line);
-}
-
-void readFileAndSetProcessesData() {
-    string fileLines[numberOfProcesses + 1];
-    string line;
-
-    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
-
-    Process processesAux[numberOfProcesses];
-
-    int i = 0;
-    while (getline(infile, line)) {
-        fileLines[i] = line;
-
-        char *lineCharArray = new char[fileLines[i].length() + 1];
-        strcpy(lineCharArray, fileLines[i].c_str());
-
-        char *p = strtok(lineCharArray, " ");
-        if (i > 0) { // etapa de separar os tokens de cada processo
-            int j = 0;
-            while (p != nullptr) {
-                if (j == 0) {
-                    processesAux[i - 1].priority = (int) strtol(p, nullptr, 10);
-                } else if (j == 1) {
-                    processesAux[i - 1].arrivalInstant = (int) strtol(p, nullptr, 10);
-                } else {
-                    processesAux[i - 1].burstTime = (int) strtol(p, nullptr, 10);
-                }
-                p = strtok(nullptr, " ");
-                j++;
-            }
-            delete[] lineCharArray;
+    for (int i = 1; i < numberOfProcesses; i++) {
+        processes[i].waitingTime = 0;
+        for (int j = 0; j < i; j++) {
+            processes[i].waitingTime += processes[j].burstTime;
         }
-        i++;
+
+        sum += processes[i].waitingTime;
     }
 
-    infile.close();
+    waitingAverageTime = sum / numberOfProcesses;
 
-    processes = new Process[numberOfProcesses];
-    for (int j = 0; j < numberOfProcesses; j++) {
-        processes[j].priority = processesAux[j].priority;
-        processes[j].arrivalInstant = processesAux[j].arrivalInstant;
-        processes[j].burstTime = processesAux[j].burstTime;
-        processes[j].waitingTime = 0;
-        processes[j].answerTime = -1;
-    }
+    Output output;
+    output.algorithm = "PRIO";
+    output.averageWaitingTime = waitingAverageTime;
+    output.averageBurstTime = 0;
+
+    return output;
 }
 
 Output srtf() {
@@ -266,6 +246,67 @@ Output fifo() {
     return output;
 }
 
+int readFileAndGetNumberOfProcesses() {
+    string line;
+    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+
+    if (infile.good()) getline(infile, line);
+    infile.close();
+
+    return stoi(line);
+}
+
+void readFileAndSetProcessesData() {
+    string fileLines[numberOfProcesses + 1];
+    string line;
+
+    ifstream infile("/home/leonardo/CLionProjects/os_project/filename.txt");
+
+    Process processesAux[numberOfProcesses];
+
+    int i = 0;
+    while (getline(infile, line)) {
+        fileLines[i] = line;
+
+        char *lineCharArray = new char[fileLines[i].length() + 1];
+        strcpy(lineCharArray, fileLines[i].c_str());
+
+        char *p = strtok(lineCharArray, " ");
+        if (i > 0) {
+            int j = 0;
+            while (p != nullptr) {
+                if (j == 0) {
+                    processesAux[i - 1].priority = (int) strtol(p, nullptr, 10);
+                } else if (j == 1) {
+                    processesAux[i - 1].arrivalInstant = (int) strtol(p, nullptr, 10);
+                } else {
+                    processesAux[i - 1].burstTime = (int) strtol(p, nullptr, 10);
+                }
+                p = strtok(nullptr, " ");
+                j++;
+            }
+            delete[] lineCharArray;
+        }
+        i++;
+    }
+
+    infile.close();
+
+    processes = new Process[numberOfProcesses];
+    for (int j = 0; j < numberOfProcesses; j++) {
+        processes[j].priority = processesAux[j].priority;
+        processes[j].arrivalInstant = processesAux[j].arrivalInstant;
+        processes[j].burstTime = processesAux[j].burstTime;
+        processes[j].waitingTime = 0;
+        processes[j].answerTime = -1;
+    }
+}
+
+void initializeProcesses() {
+    numberOfProcesses = readFileAndGetNumberOfProcesses();
+    readFileAndSetProcessesData();
+}
+
 void initializeTimeSlots() {
     numberOfSlots = calculateNumberOfSlots();
     timeSlots = new int[numberOfSlots];
@@ -273,11 +314,6 @@ void initializeTimeSlots() {
     for (int k = 0; k < numberOfSlots; k++) {
         timeSlots[k] = -1;
     }
-}
-
-void initializeProcesses() {
-    numberOfProcesses = readFileAndGetNumberOfProcesses();
-    readFileAndSetProcessesData();
 }
 
 float calculateWaitingTimeAverage() {
@@ -318,6 +354,31 @@ void sortProcessesByArrivalInstant() {
             }
         }
         if (!swaps) break;
+    }
+}
+
+void selectionSortForBurstTimeAndPriority() {
+    int pos, temp;
+    int processAux[numberOfProcesses];
+
+    for (int i = 0; i < numberOfProcesses; i++) {
+        pos = i;
+
+        for (int j = i + 1; j < numberOfProcesses; j++) {
+            if (processes[j].priority < processes[pos].priority) pos = j;
+        }
+
+        temp = processAux[i];
+        processAux[i] = processAux[pos];
+        processAux[pos] = temp;
+
+        temp = processes[i].burstTime;
+        processes[i].burstTime = processes[pos].burstTime;
+        processes[pos].burstTime = temp;
+
+        temp = processes[i].priority;
+        processes[i].priority = processes[pos].priority;
+        processes[pos].priority = temp;
     }
 }
 

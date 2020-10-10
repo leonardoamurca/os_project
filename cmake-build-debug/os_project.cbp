@@ -85,6 +85,9 @@
 		<Unit filename="/home/leonardo/CLionProjects/os_project/main.cpp">
 			<Option target="os_project"/>
 		</Unit>
+		<Unit filename="/home/leonardo/CLionProjects/os_project/tets.cpp">
+			<Option target="os_project"/>
+		</Unit>
 		<Unit filename="/home/leonardo/CLionProjects/os_project/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
