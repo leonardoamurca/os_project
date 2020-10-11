@@ -52,7 +52,7 @@ int calculateWaitingTime(Process process, int currentSlot);
 
 void sortProcessesByArrivalInstant();
 
-void selectionSortForBurstTimeAndPriority();
+void sortProcessesByPriority();
 
 void setAnswerTime(int value, int index);
 
@@ -76,9 +76,9 @@ int main() {
 
     outputs = new Output[NUMBER_OF_ALGORITHMS];
     outputs[0] = fifo();
-    outputs[3] = rrq(5);
-    outputs[2] = srtf();
     outputs[1] = prio();
+    outputs[2] = srtf();
+    outputs[3] = rrq(5);
 
     writeOutputDataOnFile();
 
@@ -115,7 +115,7 @@ Output fifo() {
 }
 
 Output prio() {
-    selectionSortForBurstTimeAndPriority();
+    sortProcessesByPriority();
 
     float waitingAverageTime;
     float sum = 0;
@@ -276,28 +276,18 @@ void sortProcessesByArrivalInstant() {
     }
 }
 
-void selectionSortForBurstTimeAndPriority() {
-    int pos, temp;
-    int processAux[numberOfProcesses];
-
+void sortProcessesByPriority() {
     for (int i = 0; i < numberOfProcesses; i++) {
-        pos = i;
-
-        for (int j = i + 1; j < numberOfProcesses; j++) {
-            if (processes[j].priority < processes[pos].priority) pos = j;
+        for (int i = 0; i < numberOfProcesses; i++) {
+            bool swaps = false;
+            for (int j = 0; j < numberOfProcesses - i - 1; j++) {
+                if (processes[j].priority > processes[j + 1].priority) {
+                    swap(processes[j], processes[j + 1]);
+                    swaps = true;
+                }
+            }
+            if (!swaps) break;
         }
-
-        temp = processAux[i];
-        processAux[i] = processAux[pos];
-        processAux[pos] = temp;
-
-        temp = processes[i].burstTime;
-        processes[i].burstTime = processes[pos].burstTime;
-        processes[pos].burstTime = temp;
-
-        temp = processes[i].priority;
-        processes[i].priority = processes[pos].priority;
-        processes[pos].priority = temp;
     }
 }
 
