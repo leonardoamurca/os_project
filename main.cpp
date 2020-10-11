@@ -64,6 +64,8 @@ void initializeTimeSlots();
 
 void initializeProcesses();
 
+void resetWaitingAndAnswerTimes();
+
 // Entrada e saída de dados em arquivos
 int readFileAndGetNumberOfProcesses();
 
@@ -111,6 +113,8 @@ Output fifo() {
     output.averageWaitingTime = waitingAverageTime;
     output.averageBurstTime = waitingAverageTime;
 
+    resetWaitingAndAnswerTimes();
+
     return output;
 }
 
@@ -135,6 +139,8 @@ Output prio() {
     output.algorithm = "PRIO";
     output.averageWaitingTime = waitingAverageTime;
     output.averageBurstTime = 0;
+
+    resetWaitingAndAnswerTimes();
 
     return output;
 }
@@ -191,6 +197,8 @@ Output srtf() {
     output.averageWaitingTime = waitingAverageTime;
     output.averageBurstTime = waitingAverageTime;
 
+    resetWaitingAndAnswerTimes();
+
     return output;
 }
 
@@ -227,6 +235,8 @@ Output rrq(int quantum) {
     output.algorithm = "RRQ" + to_string(quantum);
     output.averageWaitingTime = calculateWaitingTimeAverage();
     output.averageBurstTime = calculateAnswerTimeAverage();
+
+    resetWaitingAndAnswerTimes();
 
     return output;
 }
@@ -319,6 +329,13 @@ void initializeTimeSlots() {
 void initializeProcesses() {
     numberOfProcesses = readFileAndGetNumberOfProcesses();
     readFileAndSetProcessesData();
+}
+
+void resetWaitingAndAnswerTimes() {
+    for(int i = 0; i < numberOfProcesses; i++) {
+        processes[i].waitingTime = 0;
+        processes[i].answerTime = -1;
+    }
 }
 
 // Entrada e saída de dados em arquivos
