@@ -199,8 +199,9 @@ Output rrq(int quantum) {
     initializeTimeSlots();
 
     int slotsToBurn[numberOfProcesses];
-    for (int i = 0; i < numberOfProcesses; i++)
+    for (int i = 0; i < numberOfProcesses; i++) {
         slotsToBurn[i] = processes[i].burstTime;
+    }
 
     int currentTimeSlot = 0;
     int totalSlotsToBurn = numberOfSlots - getFirstArrivalInstantGap();
@@ -223,7 +224,7 @@ Output rrq(int quantum) {
     }
 
     Output output;
-    output.algorithm = "RRQ5";
+    output.algorithm = "RRQ" + to_string(quantum);
     output.averageWaitingTime = calculateWaitingTimeAverage();
     output.averageBurstTime = calculateAnswerTimeAverage();
 
@@ -335,9 +336,9 @@ void readFileAndSetProcessesData() {
     string fileLines[numberOfProcesses + 1];
     string line;
 
-    ifstream infile("/home/leonardo/CLionProjects/os_project/input.txt");
-
     Process processesAux[numberOfProcesses];
+
+    ifstream infile("/home/leonardo/CLionProjects/os_project/input.txt");
 
     int i = 0;
     while (getline(infile, line)) {
@@ -382,10 +383,10 @@ void writeOutputDataOnFile() {
     if (outfile.is_open()) {
         for (int i = 0; i < NUMBER_OF_ALGORITHMS; i++) {
             outfile
-                << outputs[i].algorithm << " "
-                << outputs[i].averageWaitingTime << " "
-                << outputs[i].averageBurstTime
-                << "\n";
+                    << outputs[i].algorithm << " "
+                    << outputs[i].averageWaitingTime << " "
+                    << outputs[i].averageBurstTime
+                    << "\n";
         }
     } else cout << "Não foi possível abrir o arquivo!";
     outfile.close();
