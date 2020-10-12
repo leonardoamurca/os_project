@@ -170,33 +170,6 @@ main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-tets.o: tets.cpp.o
-
-.PHONY : tets.o
-
-# target to build an object file
-tets.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/tets.cpp.o
-.PHONY : tets.cpp.o
-
-tets.i: tets.cpp.i
-
-.PHONY : tets.i
-
-# target to preprocess a source file
-tets.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/tets.cpp.i
-.PHONY : tets.cpp.i
-
-tets.s: tets.cpp.s
-
-.PHONY : tets.s
-
-# target to generate assembly for a file
-tets.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/os_project.dir/build.make CMakeFiles/os_project.dir/tets.cpp.s
-.PHONY : tets.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -209,9 +182,6 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... tets.o"
-	@echo "... tets.i"
-	@echo "... tets.s"
 .PHONY : help
 
 

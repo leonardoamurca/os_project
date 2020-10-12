@@ -3,5 +3,3 @@
 
 CMakeFiles/os_project.dir/main.cpp.o: ../main.cpp
 
-CMakeFiles/os_project.dir/tets.cpp.o: ../tets.cpp
-

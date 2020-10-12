@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/os_project.dir/main.cpp.o CMakeFiles/os_project.dir/tets.cpp.o  -o os_project 
+/usr/bin/c++   -static-libstdc++ -static-libgcc -g   CMakeFiles/os_project.dir/main.cpp.o  -o os_project 
