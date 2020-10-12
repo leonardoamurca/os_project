@@ -1,3 +1,8 @@
+/**
+ * Leonardo Aguilar Murça
+ * Pedro Gabriel Cruz
+ */
+
 #include <iostream>
 #include <fstream>
 #include <cstring>
